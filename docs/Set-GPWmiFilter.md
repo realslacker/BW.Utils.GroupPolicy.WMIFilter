@@ -129,7 +129,7 @@ Accept wildcard characters: False
 ```
 
 ### -Credential
-{{ Fill Credential Description }}
+Credential for binding to the domain.
 
 ```yaml
 Type: PSCredential

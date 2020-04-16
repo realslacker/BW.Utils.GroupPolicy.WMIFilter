@@ -78,7 +78,8 @@ switch ( $PSCmdlet.ParameterSetName ) {
 
     'DoNothing' {
 
-        Write-Host 'Build Complete!'
+        Write-Host ''
+        Write-Host 'Build Complete!' -ForegroundColor Green
         Write-Host "Build Directory: $BuildDirectory"
         Write-Host ''
         Write-Host 'Don''t forget to update the docs!'

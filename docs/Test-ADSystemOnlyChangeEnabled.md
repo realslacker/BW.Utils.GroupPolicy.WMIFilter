@@ -24,21 +24,22 @@ Test-ADSystemOnlyChangeEnabled [-ComputerName] <String[]> [-Credential <PSCreden
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Check if 'Allow System Only Change' is enabled.
+attributes.
 
 ## EXAMPLES
 
 ### Example 1
 ```powershell
-PS C:\> {{ Add example code here }}
+PS C:\> Test-ADSystemOnlyChange -ComputerName dc.contoso.com -Credential (Get-Credential)
 ```
 
-{{ Add example description here }}
+Returns TRUE if System Only Change is enabled, or FALSE if it is disabled.
 
 ## PARAMETERS
 
 ### -ComputerName
-{{ Fill ComputerName Description }}
+The remote computer to connect to.
 
 ```yaml
 Type: String[]
@@ -53,7 +54,7 @@ Accept wildcard characters: False
 ```
 
 ### -Credential
-{{ Fill Credential Description }}
+Credential for authenticating to a remote computer.
 
 ```yaml
 Type: PSCredential
