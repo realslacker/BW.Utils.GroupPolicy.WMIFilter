@@ -6,7 +6,8 @@ Module to support the import and export of Group Policy WMI filters.
 
  - [Get-GPWmiFilter](docs/Get-GPWmiFilter.md)
  - [New-GPWmiFilter](docs/New-GPWmiFilter.md)
- - [New-WmiFilterListObject](docs/New-WmiFilterListObject.md)
+ - [New-WmiFilterList](docs/New-WmiFilterList.md)
+ - [New-WmiFilterObject](docs/New-WmiFilterObject.md)
  - [Remove-GPWmiFilter](docs/Remove-GPWmiFilter.md)
  - [Set-ADSystemOnlyChange](docs/Set-ADSystemOnlyChange.md)
  - [Set-GPWmiFilter](docs/Set-GPWmiFilter.md)
