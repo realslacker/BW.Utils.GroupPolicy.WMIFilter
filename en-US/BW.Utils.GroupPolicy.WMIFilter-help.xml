@@ -51,18 +51,6 @@
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>UnboundArguments</maml:name>
-          <maml:Description>
-            <maml:para>Holder for unbound arguments when splatting.</maml:para>
-          </maml:Description>
-          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
-          <dev:type>
-            <maml:name>Object</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
       </command:syntaxItem>
       <command:syntaxItem>
         <maml:name>Get-GPWmiFilter</maml:name>
@@ -98,18 +86,6 @@
           <command:parameterValue required="true" variableLength="false">PSCredential</command:parameterValue>
           <dev:type>
             <maml:name>PSCredential</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>UnboundArguments</maml:name>
-          <maml:Description>
-            <maml:para>Holder for unbound arguments when splatting.</maml:para>
-          </maml:Description>
-          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
-          <dev:type>
-            <maml:name>Object</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -161,18 +137,6 @@
         <command:parameterValue required="true" variableLength="false">PSCredential</command:parameterValue>
         <dev:type>
           <maml:name>PSCredential</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>UnboundArguments</maml:name>
-        <maml:Description>
-          <maml:para>Holder for unbound arguments when splatting.</maml:para>
-        </maml:Description>
-        <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
-        <dev:type>
-          <maml:name>Object</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
@@ -393,19 +357,34 @@
   </command:command>
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
     <command:details>
-      <command:name>New-WmiFilterListObject</command:name>
+      <command:name>New-WmiFilterList</command:name>
       <command:verb>New</command:verb>
-      <command:noun>WmiFilterListObject</command:noun>
+      <command:noun>WmiFilterList</command:noun>
       <maml:description>
-        <maml:para>Create a new WmiFilterObject for use in WMI filters.</maml:para>
+        <maml:para>Create a new WmiFilterList for use in WMI filters.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Create a new WmiFilterObject for use in WMI filters.</maml:para>
+      <maml:para>Create a new WmiFilterList for use in WMI filters.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
-        <maml:name>New-WmiFilterListObject</maml:name>
+        <maml:name>New-WmiFilterList</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+          <maml:name>WmiFilterObject</maml:name>
+          <maml:Description>
+            <maml:para>WMI filter objects from New-WmiFilterObject.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">WmiFilterObject[]</command:parameterValue>
+          <dev:type>
+            <maml:name>WmiFilterObject[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem>
+        <maml:name>New-WmiFilterList</maml:name>
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
           <maml:name>Filter</maml:name>
           <maml:Description>
@@ -445,6 +424,18 @@
       </command:syntaxItem>
     </command:syntax>
     <command:parameters>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+        <maml:name>WmiFilterObject</maml:name>
+        <maml:Description>
+          <maml:para>WMI filter objects from New-WmiFilterObject.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">WmiFilterObject[]</command:parameterValue>
+        <dev:type>
+          <maml:name>WmiFilterObject[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
         <maml:name>Filter</maml:name>
         <maml:Description>
@@ -501,9 +492,178 @@
     <command:examples>
       <command:example>
         <maml:title>-------------------------- EXAMPLE 1 --------------------------</maml:title>
-        <dev:code>New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 2 OR ProductType = 3'</dev:code>
+        <dev:code>New-WmiFilterList 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 2 OR ProductType = 3'</dev:code>
         <dev:remarks>
           <maml:para>This example would create a filter that selects computers where the product type is Domain Controller (2) or Server (3).</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>-------------------------- EXAMPLE 2 --------------------------</maml:title>
+        <dev:code>$WmiFilter1 = New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 3'
+$WmiFilter2 = New-WmiFilterObject 'SELECT * FROM Win32_TerminalServiceSetting WHERE TerminalServerMode = 1' -NameSpace 'root\CIMv2\TerminalServices'
+New-WmiFilterList $WmiFilter1, $WmiFilter2</dev:code>
+        <dev:remarks>
+          <maml:para>This example would create a filter list that selects member servers which have terminal server enabled. Note we are not using the default namespace for one of the filters.</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>-------------------------- EXAMPLE 3 --------------------------</maml:title>
+        <dev:code>$WmiFilterList = New-WmiFilterList
+New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 3' -WmiFilterList $WmiFilterList
+New-WmiFilterObject 'SELECT * FROM Win32_TerminalServiceSetting WHERE TerminalServerMode = 1' -NameSpace 'root\CIMv2\TerminalServices' -WmiFilterList $WmiFilterList</dev:code>
+        <dev:remarks>
+          <maml:para>This is the same result as Example 2, however this time we are appending filters to a WmiFilterList object instead.</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks />
+  </command:command>
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
+      <command:name>New-WmiFilterObject</command:name>
+      <command:verb>New</command:verb>
+      <command:noun>WmiFilterObject</command:noun>
+      <maml:description>
+        <maml:para>Create a new WmiFilterObject for use in WMI filters.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>Create a new WmiFilterList for use in WMI filters.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>New-WmiFilterObject</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+          <maml:name>Filter</maml:name>
+          <maml:Description>
+            <maml:para>The WMI filter. The pattern 'SELECT &lt;something&gt; FROM &lt;somewhere&gt; WHERE &lt;sometest&gt;' is enforced.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>NameSpace</maml:name>
+          <maml:Description>
+            <maml:para>The namespace to use when executing the query. Defaults to 'root\CIMv2'.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>Root\CIMv2</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Language</maml:name>
+          <maml:Description>
+            <maml:para>The query language to use. Current versions of Windows only support WQL, which is the default.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>WQL</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>WmiFilterList</maml:name>
+          <maml:Description>
+            <maml:para>WMI filter list to append filters to.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">WmiFilterList</command:parameterValue>
+          <dev:type>
+            <maml:name>WmiFilterList</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+        <maml:name>Filter</maml:name>
+        <maml:Description>
+          <maml:para>The WMI filter. The pattern 'SELECT &lt;something&gt; FROM &lt;somewhere&gt; WHERE &lt;sometest&gt;' is enforced.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>NameSpace</maml:name>
+        <maml:Description>
+          <maml:para>The namespace to use when executing the query. Defaults to 'root\CIMv2'.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>Root\CIMv2</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Language</maml:name>
+        <maml:Description>
+          <maml:para>The query language to use. Current versions of Windows only support WQL, which is the default.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>WQL</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>WmiFilterList</maml:name>
+        <maml:Description>
+          <maml:para>WMI filter list to append filters to.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">WmiFilterList</command:parameterValue>
+        <dev:type>
+          <maml:name>WmiFilterList</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>WmiFilterList</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para></maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para></maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>-------------------------- EXAMPLE 1 --------------------------</maml:title>
+        <dev:code>New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 2 OR ProductType = 3'</dev:code>
+        <dev:remarks>
+          <maml:para>This example would create a filter that selects computers where the product type is Domain Controller (2) or Server (3). This object would have to be added to a WmiFilterList before use.</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>-------------------------- EXAMPLE 2 --------------------------</maml:title>
+        <dev:code>$WmiFilterList = New-WmiFilterList
+New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 3' -WmiFilterList $WmiFilterList
+New-WmiFilterObject 'SELECT * FROM Win32_TerminalServiceSetting WHERE TerminalServerMode = 1' -NameSpace 'root\CIMv2\TerminalServices' -WmiFilterList $WmiFilterList</dev:code>
+        <dev:remarks>
+          <maml:para>This example would create a filter list that selects member servers which have terminal server enabled. Note we are not using the default namespace for one of the filters.</maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>
