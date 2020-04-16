@@ -4,41 +4,16 @@ using namespace System.Security.Principal
 using namespace System.Collections
 
 
-# NOTE: WmiFilterObject.ps1 needs to load before WmiFilterList.ps1 as the object class needs to already be defined when the list class is loaded.
-#. "$PSScriptRoot\classes\WmiFilterObject.ps1"
-#. "$PSScriptRoot\classes\WmiFilterList.ps1"
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
+function New-WmiFilterObject {
 
-
-<#
-.SYNOPSIS
- Create a new WmiFilterObject for use in WMI filters.
-
-.DESCRIPTION
- Create a new WmiFilterObject for use in WMI filters.
-
-.PARAMETER Filter
- The WMI filter. The pattern 'SELECT <something> FROM <somewhere> WHERE <sometest>' is enforced.
-
-.PARAMETER NameSpace
- The namespace to use when executing the query. Defaults to 'root\CIMv2'.
-
-.PARAMETER Language
- The query language to use. Current versions of Windows only support WQL, which is the default.
-
-.EXAMPLE
- New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 2 OR ProductType = 3'
-
- This example would create a filter that selects computers where the product type is Domain Controller (2) or Server (3).
-#>
-function New-WmiFilterListObject {
-
-    [OutputType([WmiFilterList])]
+    [OutputType([WmiFilterObject])]
     param (
 
         [Parameter(Mandatory, Position=1)]
         [ValidatePattern('^SELECT.*FROM.*WHERE.*$')]
         [ValidateNotNullOrEmpty()]
-        [string[]]
+        [string]
         $Filter,
 
         [ValidateNotNullOrEmpty()]
@@ -47,19 +22,85 @@ function New-WmiFilterListObject {
 
         [ValidateSet('WQL')]
         [string]
+        $Language = 'WQL',
+
+        [WmiFilterList]
+        $WmiFilterList
+
+    )
+
+    $WmiFilterObject = [WmiFilterObject]@{
+            Filter      = $Filter
+            NameSpace   = $NameSpace
+            Language    = $Language
+    }
+
+    if ( $WmiFilterList -is [WmiFilterList] ) {
+
+        $WmiFilterList.Add( $WmiFilterObject ) > $null
+
+    } else {
+        
+        # note that the comma is important so PowerShell doesn't convert to an Array
+        return $WmiFilterObject
+
+    }
+
+}
+
+
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
+function New-WmiFilterList {
+
+    [CmdletBinding(DefaultParameterSetName='EmptyList')]
+    [OutputType([WmiFilterList])]
+    param (
+
+        [Parameter(ParameterSetName='FromObject', Mandatory, Position=1)]
+        [WmiFilterObject[]]
+        $WmiFilterObject,
+        
+        [Parameter(ParameterSetName='FromString', Mandatory, Position=1)]
+        [ValidatePattern('^SELECT.*FROM.*WHERE.*$')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $Filter,
+
+        [Parameter(ParameterSetName='FromString')]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $NameSpace = 'root\CIMv2',
+
+        [Parameter(ParameterSetName='FromString')]
+        [ValidateSet('WQL')]
+        [string]
         $Language = 'WQL'
 
     )
 
     $WmiFilterList = [WmiFilterList]::new()
 
-    $Filter | ForEach-Object {
+    switch ( $PSCmdlet.ParameterSetName ) {
 
-        $WmiFilterList.Add([WmiFilterObject]@{
-            Filter      = $Filter
-            NameSpace   = $NameSpace
-            Language    = $Language
-        }) > $null
+        'FromObject' {
+
+            $WmiFilterList.AddRange( $WmiFilterObject ) > $null
+
+        }
+
+        'FromString' {
+
+            $Filter | ForEach-Object {
+
+                $WmiFilterList.Add([WmiFilterObject]@{
+                    Filter      = $Filter
+                    NameSpace   = $NameSpace
+                    Language    = $Language
+                }) > $null
+    
+            }
+
+        }
 
     }
 
@@ -69,39 +110,7 @@ function New-WmiFilterListObject {
 }
 
 
-<#
-.SYNOPSIS
- Get WMI filters from Active Directory.
-
-.DESCRIPTION
- Get WMI filters from Active Directory and parse them into objects.
-
-.PARAMETER Name
- The Name of the WMI filter to return.
-
-.PARAMETER GUID
- The GUID of the WMI filter to return.
-
-.PARAMETER DomainName
- The domain to search for WMI filters.
-
-.EXAMPLE
- Get-GPWmiFilter
-
- Will return a list of all WMI filters in the current user's domain.
-
-.EXAMPLE
- Get-GPWmiFilter -Name '*Server*' -DomainName 'contoso.com' -Credential (Get-Credential CONTOSO\Administrator)
-
- Will return a list of all WMI filters with 'Server' in the name from the domain
- contoso.com using the CONTOSO Administrator account.
-
-.EXAMPLE
- Get-GPWmiFilter -GUID '6a3a8a8d-2072-4596-8b5b-b24bcf0486ce'
-
- Will return the WMI filter with the GUID '6a3a8a8d-2072-4596-8b5b-b24bcf0486ce'
- from the current user's domain.
-#>
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function Get-GPWmiFilter {
 
     [CmdletBinding(DefaultParameterSetName='Name')]
@@ -154,34 +163,7 @@ function Get-GPWmiFilter {
 }
 
 
-<#
-.SYNOPSIS
- Create a new WMI filter in Active Directory.
-
-.DESCRIPTION
- Create a new WMI filter object in Active Directory.
-
-.PARAMETER Name
- The Name of the WMI filter to create. Must be unique.
-
-.PARAMETER Description
- An optional description of what the WMI filter does.
-
-.PARAMETER GUID
- Allows you to optionally specify the GUID of the WMI filter. This is useful
- for restoring WMI filters from backup. Defaults to a random GUID.
-
-.PARAMETER Filter
- Either string filter(s) or WMI filter object(s) returned by New-WmiFilterObject.
-
-.PARAMETER DomainName
- The destination domain.
-
-.EXAMPLE
- New-GPWmiFilter -Name 'Servers Only' -Description 'Selects computers where the product type is Domain Controller (2) or Server (3)' -Filter 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 2 OR ProductType = 3'
-
- This example would create a filter that selects computers where the product type is Domain Controller (2) or Server (3).
-#>
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function New-GPWmiFilter {
 
     param(
@@ -277,36 +259,7 @@ function New-GPWmiFilter {
 }
 
 
-<#
-.SYNOPSIS
- Updates an exising WMI filter in Active Directory.
-
-.DESCRIPTION
- Updates an exising WMI filter in Active Directory.
-
-.PARAMETER Name
- The Name of the WMI filter to update.
-
-.PARAMETER GUID
- The GUID of the WMI filter to update.
-
-.PARAMETER NewName
- The new name if renaming the WMI filter.
-
-.PARAMETER Description
- A description of what the WMI filter does.
-
-.PARAMETER Filter
- Either string filter(s) or WMI filter object(s) returned by New-WmiFilterObject.
-
-.PARAMETER DomainName
- The destination domain.
-
-.EXAMPLE
- Set-GPWmiFilter -Name 'Servers Only' -Description 'Selects computers where the product type is Domain Controller (2) or Server (3)'
-
- This example would update the description of the WMI filter with the name 'Servers Only'.
- #>
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function Set-GPWmiFilter {
 
     [CmdletBinding(DefaultParameterSetName='Name', SupportsShouldProcess, ConfirmImpact='Medium')]
@@ -414,6 +367,7 @@ function Set-GPWmiFilter {
 }
 
 
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function Remove-GPWmiFilter {
 
     [CmdletBinding(DefaultParameterSetName='Name', SupportsShouldProcess, ConfirmImpact='High')]
@@ -515,14 +469,7 @@ function Remove-GPWmiFilter {
 }
 
 
-<#
-.SYNOPSIS
- Set registry values on domain controller to allow writing to system only
- attributes.
-.NOTES
- This function has been taken from the GPWmiFilter.psm1 module written by Bin
- Yi from Microsoft with minimal changes.
-#>
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function Set-ADSystemOnlyChange {
 
     param(
@@ -617,14 +564,7 @@ function Set-ADSystemOnlyChange {
 }
 
 
-<#
-.SYNOPSIS
- Check if 'Allow System Only Change' is enabled.
- attributes.
-.NOTES
- This function has been taken from the GPWmiFilter.psm1 module written by Bin
- Yi from Microsoft with minimal changes.
-#>
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function Test-ADSystemOnlyChangeEnabled {
 
     [CmdletBinding(DefaultParameterSetName='Local')]
