@@ -100,7 +100,7 @@ Accept wildcard characters: False
 ```
 
 ### -Credential
-{{ Fill Credential Description }}
+Credential for binding to the domain.
 
 ```yaml
 Type: PSCredential
@@ -115,7 +115,7 @@ Accept wildcard characters: False
 ```
 
 ### -UnboundArguments
-{{ Fill UnboundArguments Description }}
+Holder for unbound arguments when splatting.
 
 ```yaml
 Type: Object

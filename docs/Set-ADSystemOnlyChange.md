@@ -34,21 +34,22 @@ Set-ADSystemOnlyChange [-Disable] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-{{ Fill in the Description }}
+Set registry values on domain controller to allow writing to system only
+attributes.
 
 ## EXAMPLES
 
 ### Example 1
 ```powershell
-PS C:\> {{ Add example code here }}
+PS C:\> Set-ADSystemOnlyChange -Enable -ComputerName dc.contoso.com -Credential (Get-Credential)
 ```
 
-{{ Add example description here }}
+Enables System Only Change on dc.contoso.com.
 
 ## PARAMETERS
 
 ### -ComputerName
-{{ Fill ComputerName Description }}
+The remote computer to connect to.
 
 ```yaml
 Type: String[]
@@ -63,7 +64,7 @@ Accept wildcard characters: False
 ```
 
 ### -Enable
-{{ Fill Enable Description }}
+Enable writing to System Only objects in AD.
 
 ```yaml
 Type: SwitchParameter
@@ -78,7 +79,7 @@ Accept wildcard characters: False
 ```
 
 ### -Disable
-{{ Fill Disable Description }}
+Disable writing to System Only objects in AD.
 
 ```yaml
 Type: SwitchParameter
@@ -93,7 +94,7 @@ Accept wildcard characters: False
 ```
 
 ### -Credential
-{{ Fill Credential Description }}
+Credential for authenticating to a remote computer.
 
 ```yaml
 Type: PSCredential
