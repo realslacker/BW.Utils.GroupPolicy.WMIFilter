@@ -14,14 +14,12 @@ Get WMI filters from Active Directory.
 
 ### Name (Default)
 ```
-Get-GPWmiFilter [[-Name] <String>] [-DomainName <String>] [-Credential <PSCredential>]
- [-UnboundArguments <Object>] [<CommonParameters>]
+Get-GPWmiFilter [[-Name] <String>] [-DomainName <String>] [-Credential <PSCredential>] [<CommonParameters>]
 ```
 
 ### GUID
 ```
-Get-GPWmiFilter [[-GUID] <Guid>] [-DomainName <String>] [-Credential <PSCredential>]
- [-UnboundArguments <Object>] [<CommonParameters>]
+Get-GPWmiFilter [[-GUID] <Guid>] [-DomainName <String>] [-Credential <PSCredential>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -104,21 +102,6 @@ Credential for binding to the domain.
 
 ```yaml
 Type: PSCredential
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -UnboundArguments
-Holder for unbound arguments when splatting.
-
-```yaml
-Type: Object
 Parameter Sets: (All)
 Aliases:
 
