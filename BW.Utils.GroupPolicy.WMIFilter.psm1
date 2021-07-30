@@ -41,7 +41,6 @@ function New-WmiFilterObject {
 
     } else {
         
-        # note that the comma is important so PowerShell doesn't convert to an Array
         return $WmiFilterObject
 
     }
@@ -113,148 +112,269 @@ function New-WmiFilterList {
 # .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function Get-GPWmiFilter {
 
-    [CmdletBinding(DefaultParameterSetName='Name')]
+    [CmdletBinding()]
     param(
+    
+        [Parameter(
+            ParameterSetName = 'GetAll',
+            Mandatory
+        )]
+        [switch]
+        $All,
 
-        [Parameter(Position=1, ParameterSetName='Name')]
-        [SupportsWildcards()]
+        [Parameter(
+            ParameterSetName = 'ByName',
+            Mandatory,
+            Position = 0,
+            ValueFromPipeline
+        )]
+        [Alias( 'DisplayName' )]
         [string]
-        $Name = '*',
+        $Name,
 
-        [Parameter(Position=1, ParameterSetName='GUID')]
+        [Parameter(
+            ParameterSetName = 'ByGUID',
+            Mandatory,
+            Position = 0,
+            ValueFromPipelineByPropertyName
+        )]
         [guid]
-        $GUID,
+        $Guid,
 
-        [Alias('DnsDomain')]
+        [Parameter(
+            ParameterSetName = 'ByGPO',
+            Mandatory,
+            Position = 0,
+            ValueFromPipeline
+        )]
+        [Microsoft.GroupPolicy.Gpo]
+        $GPO,
+
+        [Parameter(
+            ParameterSetName = 'GetAll',
+            ValueFromPipelineByPropertyName
+        )]
+        [Parameter(
+            ParameterSetName = 'ByName',
+            ValueFromPipelineByPropertyName
+        )]
+        [Parameter(
+            ParameterSetName = 'ByGUID',
+            ValueFromPipelineByPropertyName
+        )]
+        [Alias( 'DomainName' )]
         [string]
-        $DomainName = $env:USERDNSDOMAIN,
+        $Domain = $env:USERDNSDOMAIN,
 
-        [pscredential]
-        $Credential,
+        [Parameter(
+            ParameterSetName = 'GetAll'
+        )]
+        [Parameter(
+            ParameterSetName = 'ByName'
+        )]
+        [Parameter(
+            ParameterSetName = 'ByGUID'
+        )]
+        [Alias( 'DC' )]
+        [string]
+        $Server,
 
-        [Parameter(ValueFromRemainingArguments, DontShow)]
-        $UnboundArguments
-        
+        [Parameter(
+            DontShow
+        )]
+        [switch]
+        $AsDirectoryEntry
+
     )
 
-    $PSBoundParameters.Remove( 'UnboundArguments' ) > $null
+    # if we are passed a GPO on the pipeline we do a special lookup
+    if ( $GPO ) {
 
-    $DomainParams = _GetDomainParams @PSBoundParameters
+        if ( $GPO.WmiFilter ) {
 
-    $NamingContext = _GetNamingContext @DomainParams -ErrorAction Stop
+            $GPO.WmiFilter.Path -replace '^MSFT_SomFilter\.' -split '(?<="),' | ForEach-Object {
 
-    $Searcher = _GetSearcher -SearchBase "CN=SOM,CN=WMIPolicy,CN=System,$NamingContext" -SearchFilter '(objectclass=msWMI-Som)' @DomainParams -ErrorAction Stop
-    
-    $Searcher.FindAll().ForEach({ $_.Properties }) |
-        Select-Object `
-            @{ N='DistinguishedName'    ; E={ $_.distinguishedname }},
-            @{ N='Name'                 ; E={ $_.'mswmi-name' }},
-            @{ N='GUID'                 ; E={ [guid][string]$_.'mswmi-id' }},
-            @{ N='Description'          ; E={ $_.'mswmi-parm1' }},
-            @{ N='Author'               ; E={ $_.'mswmi-author' }},
-            @{ N='Filters'              ; E={ , [WmiFilterList][string]$_.'mswmi-parm2' }} |
-        Where-Object {
-            ( $PSCmdlet.ParameterSetName -eq 'Name' -and $_.Name -like $Name ) -or
-            ( $PSCmdlet.ParameterSetName -eq 'GUID' -and $_.GUID -eq $GUID )
+                $Key, $Value = $_.Split('=').ForEach({ $_.Trim('"') })
+                
+                if ( $Key -eq 'ID' ) { $Guid = $Value }
+                if ( $Key -eq 'Domain' ) { $Domain = $Value }
+
+            }
+
+            return Get-GPWmiFilter -Guid $Guid -Domain $Domain -AsDirectoryEntry:$AsDirectoryEntry.IsPresent
+
+
+        } else {
+
+            Write-Warning "No WMI filter attached to GPO"
+            return
         }
 
-    $Searcher.Dispose()
+    }
 
+    if ( -not $Server ) {
+    
+        $DirectoryContext = [DirectoryContext]::new( 'Domain', $Domain )
+        $Server = [Domain]::GetDomain( $DirectoryContext ).FindDomainController().Name
+    
+    }
+
+    $NamingContext = ([adsi]"LDAP://$Domain/RootDSE").defaultNamingContext
+    $SOMContainer = [adsi]"LDAP://$Server/CN=SOM,CN=WMIPolicy,CN=System,$NamingContext"
+    $SearchFilter = switch ( $PSCmdlet.ParameterSetName ) {
+        'GetAll' { '(objectclass=msWMI-Som)' }
+        'ByName' { "(&(objectclass=msWMI-Som)(mswmi-name=$Name))" }
+        'ByGUID' { "(&(objectclass=msWMI-Som)(mswmi-id=$($Guid.ToString('B'))))" }
+    }
+    
+    $Searcher = [adsisearcher]::new( $SOMContainer, $SearchFilter )
+    $Searcher.PropertiesToLoad.Add( 'adspath' ) > $null
+    
+    $DirectoryEntries = $Searcher.FindAll().ForEach({ [adsi]$_.Path })
+
+    if ( -not $DirectoryEntries -and -not $All ) {
+
+        Write-Error 'No WMI filter found!'
+        return
+
+    }
+    
+    if ( $AsDirectoryEntry ) {
+
+        $DirectoryEntries
+
+    } else {
+
+        $DirectoryEntries | Select-Object `
+            @{ N='DisplayName'  ; E={ $_.'mswmi-name' }},
+            @{ N='DomainName'   ; E={ $Domain }},
+            @{ N='Owner'        ; E={ $_.PsBase.ObjectSecurity.Owner }},
+            @{ N='Id'           ; E={ [guid][string]$_.'mswmi-id' }},
+            @{ N='Description'  ; E={ $_.'mswmi-parm1' }},
+            @{ N='Author'       ; E={ $_.'mswmi-author' }},
+            @{ N='Filters'      ; E={ , [WmiFilterList][string]$_.'mswmi-parm2' }}
+
+    }
+
+    $Searcher.Dispose()
+    $SOMContainer.Dispose()
+    
 }
 
 
 # .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function New-GPWmiFilter {
 
+    [CmdletBinding(
+        SupportsShouldProcess,
+        ConfirmImpact = 'Low'
+    )]
     param(
 
-        [Parameter(Mandatory, Position=1)]
+        [Parameter(
+            Mandatory,
+            Position = 0,
+            ValueFromPipelineByPropertyName
+        )]
+        [Alias( 'DisplayName' )]
         [string]
         $Name,
 
+        [Alias( 'Id' )]
+        [guid]
+        $Guid = ( [guid]::NewGuid() ),
+
+        [Parameter(
+            ValueFromPipelineByPropertyName
+        )]
         [string]
         $Description,
 
-        [guid]
-        $GUID = ( [guid]::NewGuid() ),
-
-        [Parameter(Mandatory)]
-        [WmiFilterObject[]]
-        $Filter,
-
-        [Alias('DnsDomain')]
+        [Parameter(
+            ValueFromPipelineByPropertyName
+        )]
         [string]
-        $DomainName = $env:USERDNSDOMAIN,
+        $Author = ([WindowsIdentity]::GetCurrent().Name),
 
-        [pscredential]
-        $Credential
+        [Parameter(
+            Mandatory,
+            ValueFromPipelineByPropertyName
+        )]
+        [WmiFilterObject[]]
+        $Filters,
+
+        [Alias( 'DomainName' )]
+        [string]
+        $Domain = $env:USERDNSDOMAIN,
+
+        [Alias( 'DC' )]
+        [string]
+        $Server
         
     )
 
-    $DomainParams = _GetDomainParams @PSBoundParameters
-
-    if ( $Credential ) {
-
-        $Author = $Credential.UserName
+    if ( -not $Server ) {
     
-    } else {
-
-        $Author = [WindowsIdentity]::GetCurrent().Name
-
+        $DirectoryContext = [DirectoryContext]::new( 'Domain', $Domain )
+        $Server = [Domain]::GetDomain( $DirectoryContext ).FindDomainController().Name
+    
     }
 
-    # verify that the WMI filter doesn't already exist
-    if ( $PSCmdlet.ParameterSetName -eq 'Name' -and ( Get-GPWmiFilter -Name $Name @DomainParams ) ) {
+    $TestParams = @{
+        Domain = $Domain
+        Server = $Server
+    }
+
+    # Check for existing filter with same name
+    if ( $ExistingFilter = Get-GPWmiFilter -Name $Name @TestParams -ErrorAction SilentlyContinue ) {
         
-        Write-Error ( 'WMI filter ''{0}'' already exists in domain {1}!' -f $Name, $DomainName )
-
-        return
-
-    } elseif ( $PSCmdlet.ParameterSetName -eq 'GUID' -and ( Get-GPWmiFilter -GUID $GUID @DomainParams ) ) {
-
-        Write-Error ( 'WMI filter with GUID ''{0}'' already exists in domain {1}!' -f $GUID.ToString('B'), $DomainName )
-        
+        Write-Error ( 'WMI filter ''{0}'' already exists in domain {1}!' -f $ExistingFilter.DisplayName, $Domain )
         return
 
     }
+    
+    # check for existing filter with same quid
+    if ( $ExistingFilter = Get-GPWmiFilter -Guid $Guid @TestParams -ErrorAction SilentlyContinue ) {
 
-    $NamingContext = _GetNamingContext @DomainParams -ErrorAction Stop
-
-    # get the container where the WMI filters are stored
-    $SOMContainer = [adsi]"LDAP://CN=SOM,CN=WMIPolicy,CN=System,$NamingContext"
-
-    if ( $Credential ) {
-
-        $SOMContainer.PSBase.Username = $Credential.UserName
-        $SOMContainer.PSBase.Password = $Credential.GetNetworkCredential().Password
+        Write-Error ( 'WMI filter with GUID ''{0}'' already exists in domain {1}!' -f $ExistingFilter.ToString('B'), $Domain )
+        return
 
     }
+
+    $NamingContext = ([adsi]"LDAP://$Domain/RootDSE").defaultNamingContext
+    $SOMContainer = [adsi]"LDAP://$Server/CN=SOM,CN=WMIPolicy,CN=System,$NamingContext"
 
     # create a time stamp
     $Created = [datetime]::UtcNow.ToString('yyyyMMddHHmmss.ffffff-000')
 
-    try {
+    if ( $PSCmdlet.ShouldProcess( $Name, 'create' ) ) {
+
+        try {
+            
+            $WmiFilter = $SOMContainer.Create( 'msWMI-Som', "CN=$($Guid.ToString('B'))" )
+
+            $WmiFilter.Put( 'msWMI-Name',               $Name                                       )
+            $WmiFilter.Put( 'msWMI-Parm1',              $Description                                )
+            $WmiFilter.Put( 'msWMI-Parm2',              [WmiFilterList]::new($Filters).ToString()   )
+            $WmiFilter.Put( 'msWMI-Author',             $Author                                     )
+            $WmiFilter.Put( 'msWMI-ID',                 $Guid.ToString('B')                         )
+            $WmiFilter.Put( 'instanceType',             4                                           )
+            $WmiFilter.Put( 'showInAdvancedViewOnly',   'TRUE'                                      )
+            $WmiFilter.Put( 'distinguishedname',        "CN=$($Guid.ToString('B')),$SOMContainer"   )
+            $WmiFilter.Put( 'msWMI-ChangeDate',         $Created                                    )
+            $WmiFilter.Put( 'msWMI-CreationDate',       $Created                                    )
+
+            $WmiFilter.SetInfo()
+
+        } catch {
+
+            Write-Error ( 'Failed to create WMI filter ''{0}'' in domain {1}. Please verify that you have rights to create WMI filters. You may also need to first enable ''Allow System Only Change'' for the domain. You can use the Set-ADSystemOnlyChange cmdlet to make this change.' -f $Name, $Domain )
         
-        $WmiFilter = $SOMContainer.Create( 'msWMI-Som', "CN=$($GUID.ToString('B'))" )
+        }
 
-        $WmiFilter.Put( 'msWMI-Name',               $Name                                           )
-        $WmiFilter.Put( 'msWMI-Parm1',              $Description                                    )
-        $WmiFilter.Put( 'msWMI-Parm2',              [WmiFilterList]::new($Filter).ToString()        )
-        $WmiFilter.Put( 'msWMI-Author',             $Author                                         )
-        $WmiFilter.Put( 'msWMI-ID',                 $GUID.ToString('B')                             )
-        $WmiFilter.Put( 'instanceType',             4                                               )
-        $WmiFilter.Put( 'showInAdvancedViewOnly',   'TRUE'                                          )
-        $WmiFilter.Put( 'distinguishedname',        "CN=$($GUID.ToString('B')),$SOMContainer"       )
-        $WmiFilter.Put( 'msWMI-ChangeDate',         $Created                                        )
-        $WmiFilter.Put( 'msWMI-CreationDate',       $Created                                        )
-
-        $WmiFilter.SetInfo()
-
-    } catch {
-
-        Write-Error ( 'Failed to create WMI filter ''{0}'' in domain {1}. You may need to first enable ''Allow System Only Change'' for the domain. You can use the Set-ADSystemOnlyChange cmdlet to make this change.' -f $Name, $DomainName )
-    
     }
+
+    $SOMContainer.Dispose()
 
 }
 
@@ -262,16 +382,32 @@ function New-GPWmiFilter {
 # .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function Set-GPWmiFilter {
 
-    [CmdletBinding(DefaultParameterSetName='Name', SupportsShouldProcess, ConfirmImpact='Medium')]
+    [CmdletBinding(
+        DefaultParameterSetName = 'ByName',
+        SupportsShouldProcess,
+        ConfirmImpact = 'High'
+    )]
     param(
 
-        [Parameter(Mandatory, Position=1, ParameterSetName='Name')]
+        [Parameter(
+            ParameterSetName = 'ByName',
+            Mandatory,
+            Position = 0,
+            ValueFromPipeline
+        )]
+        [Alias( 'DisplayName' )]
         [string]
         $Name,
 
-        [Parameter(Mandatory, Position=1, ParameterSetName='GUID')]
+        [Parameter(
+            ParameterSetName = 'ByGUID',    
+            Mandatory,
+            Position = 0,
+            ValueFromPipelineByPropertyName
+        )]
+        [Alias( 'Id' )]
         [guid]
-        $GUID,
+        $Guid,
 
         [string]
         $NewName,
@@ -280,79 +416,70 @@ function Set-GPWmiFilter {
         $Description,
 
         [WmiFilterObject[]]
-        $Filter,
+        $Filters,
 
-        [Alias('DnsDomain')]
+        [Alias( 'DomainName' )]
         [string]
-        $DomainName = $env:USERDNSDOMAIN,
+        $Domain = $env:USERDNSDOMAIN,
 
-        [pscredential]
-        $Credential
+        [Alias( 'DC' )]
+        [string]
+        $Server
         
     )
 
-    $DomainParams = _GetDomainParams @PSBoundParameters
+    if ( -not $Server ) {
+    
+        $DirectoryContext = [DirectoryContext]::new( 'Domain', $Domain )
+        $Server = [Domain]::GetDomain( $DirectoryContext ).FindDomainController().Name
+    
+    }
+
+    $GetParams = @{
+        Domain = $Domain
+        Server = $Server
+    }
+    if ( $Name ) { $GetParams.Name = $Name }
+    if ( $Guid ) { $GetParams.Guid = $Guid }
 
     # verify that the WMI filter exists
-    if ( $PSCmdlet.ParameterSetName -eq 'Name' -and -not( $WmiFilterObject = Get-GPWmiFilter -Name $Name @DomainParams ) ) {
-        
-        Write-Error ( 'WMI filter ''{0}'' could not be found in domain {1}!' -f $Name, $DomainName )
-
-        return
-
-    } elseif ( $PSCmdlet.ParameterSetName -eq 'GUID' -and -not( $WmiFilterObject = Get-GPWmiFilter -GUID $GUID @DomainParams ) ) {
-
-        Write-Error ( 'WMI filter with GUID ''{0}'' could not be found in domain {1}!' -f $GUID.ToString('B'), $DomainName )
-        
-        return
-
-    }
-
-    $WmiFilter = [adsi]"LDAP://$($WmiFilterObject.DistinguishedName)"
-
-    if ( $Credential ) {
-
-        $WmiFilter.PSBase.Username = $Credential.UserName
-        $WmiFilter.PSBase.Password = $Credential.GetNetworkCredential().Password
-
-    }
+    $ExistingFilter = Get-GPWmiFilter @GetParams -AsDirectoryEntry -ErrorAction Stop
 
     $IsUpdated = $false
 
     if ( $NewName ) {
 
-        $WmiFilter.'msWMI-Name' = $NewName
+        $ExistingFilter.'msWMI-Name' = $NewName
         $IsUpdated = $true
 
     }
 
     if ( $Description ) {
 
-        $WmiFilter.'msWMI-Parm1' = $Description
+        $ExistingFilter.'msWMI-Parm1' = $Description
         $IsUpdated = $true
 
     }
 
-    if ( $Filter ) {
+    if ( $Filters ) {
 
-        $WmiFilter.'msWMI-Parm2' = [WmiFilterList]::new( $Filter ).ToString()
+        $ExistingFilter.'msWMI-Parm2' = [WmiFilterList]::new( $Filters ).ToString()
         $IsUpdated = $true
 
     }
 
     if ( $IsUpdated ) {
 
-        if ( $PSCmdlet.ShouldProcess( $WmiFilterObject.Name, 'update' ) ) {
+        if ( $PSCmdlet.ShouldProcess( $ExistingFilter.'msWMI-Name', 'update' ) ) {
 
             try {
 
-                $WmiFilter.'msWMI-ChangeDate' = [datetime]::UtcNow.ToString('yyyyMMddHHmmss.ffffff-000')
-
-                $WmiFilter.CommitChanges()
+                $ExistingFilter.'msWMI-ChangeDate' = [datetime]::UtcNow.ToString('yyyyMMddHHmmss.ffffff-000')
+                $ExistingFilter.CommitChanges()
 
             } catch {
 
-                Write-Error ( 'Failed to update WMI filter ''{0}'' in domain {1}. You may need to first enable ''Allow System Only Change'' for the domain. You can use the Set-ADSystemOnlyChange cmdlet to make this change.' -f $Name, $DomainName )
+                Write-Error ( 'Failed to update WMI filter ''{0}'' in domain {1}. Please verify that you have rights to create WMI filters. You may also need to first enable ''Allow System Only Change'' for the domain. You can use the Set-ADSystemOnlyChange cmdlet to make this change.' -f $ExistingFilter.'msWMI-Name', $Domain )
 
             }
 
@@ -360,7 +487,7 @@ function Set-GPWmiFilter {
     
     } else {
 
-        Write-Warning ( 'No changes made to WMI filter ''{0}'' in domain {1}.' -f $WmiFilterObject.Name, $DomainName )
+        Write-Warning ( 'No changes made to WMI filter ''{0}'' in domain {1}.' -f $ExistingFilter.'msWMI-Name', $Domain )
 
     }
 
@@ -370,101 +497,323 @@ function Set-GPWmiFilter {
 # .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
 function Remove-GPWmiFilter {
 
-    [CmdletBinding(DefaultParameterSetName='Name', SupportsShouldProcess, ConfirmImpact='High')]
+    [CmdletBinding(
+        DefaultParameterSetName = 'ByName',
+        SupportsShouldProcess,
+        ConfirmImpact = 'High'
+    )]
     param(
 
-        [Parameter(Mandatory, Position=1, ParameterSetName='Name')]
+        [Parameter(
+            ParameterSetName = 'ByName',
+            Mandatory,
+            Position = 0,
+            ValueFromPipeline
+        )]
+        [Alias( 'DisplayName' )]
         [string]
         $Name,
 
-        [Parameter(Mandatory, Position=1, ParameterSetName='GUID')]
+        [Parameter(
+            ParameterSetName = 'ByGUID',    
+            Mandatory,
+            Position = 0,
+            ValueFromPipelineByPropertyName
+        )]
+        [Alias( 'Id' )]
         [guid]
-        $GUID,
+        $Guid,
 
-        [Alias('DnsDomain')]
+        [Alias( 'DomainName' )]
         [string]
-        $DomainName = $env:USERDNSDOMAIN,
+        $Domain = $env:USERDNSDOMAIN,
 
-        [pscredential]
-        $Credential
+        [Alias( 'DC' )]
+        [string]
+        $Server
         
     )
 
-    $DomainParams = _GetDomainParams @PSBoundParameters
-
-    # verify that the WMI filter exists
-    if ( $PSCmdlet.ParameterSetName -eq 'Name' -and -not( $WmiFilterObject = Get-GPWmiFilter -Name $Name @DomainParams ) ) {
-        
-        Write-Error ( 'WMI filter ''{0}'' could not be found in domain {1}!' -f $Name, $DomainName )
-
-        return
-
-    } elseif ( $PSCmdlet.ParameterSetName -eq 'GUID' -and -not( $WmiFilterObject = Get-GPWmiFilter -GUID $GUID @DomainParams ) ) {
-
-        Write-Error ( 'WMI filter with GUID ''{0}'' could not be found in domain {1}!' -f $GUID.ToString('B'), $DomainName )
-        
-        return
-
+    if ( -not $Server ) {
+    
+        $DirectoryContext = [DirectoryContext]::new( 'Domain', $Domain )
+        $Server = [Domain]::GetDomain( $DirectoryContext ).FindDomainController().Name
+    
     }
 
-    $NamingContext = _GetNamingContext @DomainParams -ErrorAction Stop
+    $GetParams = @{
+        Domain = $Domain
+        Server = $Server
+    }
+    if ( $Name ) { $GetParams.Name = $Name }
+    if ( $Guid ) { $GetParams.Guid = $Guid }
+
+    # verify that the WMI filter exists
+    $ExistingFilter = Get-GPWmiFilter @GetParams -ErrorAction Stop
+
+    $LookupBy = ( 'Name', 'GUID' )[ $PSBoundParameters.ContainsKey( 'Guid' ) ]
+    $LookupValue = ( $Name, $Guid.ToString('B') )[ $PSBoundParameters.ContainsKey( 'Guid' ) ]
 
     # verify this WMI filter isn't in use
-    $Searcher = _GetSearcher -SearchBase "CN=Policies,CN=System,$NamingContext" -SearchFilter "(&(objectclass=groupPolicyContainer)(gPCWQLFilter=*$($WmiFilterObject.GUID.ToString('B'))*))" @DomainParams -ErrorAction Stop
-
-    $LinkedGPOs = $Searcher.FindAll().ForEach({ $_.Properties }) |
-        Select-Object `
-            @{ N='Name'     ; E={ $_['displayName'] }},
-            @{ N='GUID'     ; E={ [guid][string]$_['name'] }}
-
-    $Searcher.Dispose();
+    $LinkedGPOs = Get-GPWmiFilterLinkedGPO @GetParams
 
     if ( $LinkedGPOs.Count -gt 0 ) {
 
         Write-Verbose 'Linked Group Policies:'
-        Write-Verbose ''
-        Write-Verbose 'GUID                                   | NAME'
-        Write-Verbose '---------------------------------------|----------------------------------------'
 
-        $LinkedGPOs |
-            ForEach-Object {
 
-                Write-Verbose ( '{1} | {0}' -f $_.Name, $_.GUID.ToString('B') )
 
-            }
+        $LinkedGPOs | ForEach-Object {
 
-        if ( $PSCmdlet.ParameterSetName -eq 'Name' ) {
+            Write-Verbose ( '{0} {1}' -f $_.DisplayName, $_.Id.ToString('B') )
 
-            Write-Error ( 'WMI filter ''{0}'' in domain {1} could not be removed! It is linked to {2} Group Policies.' -f $Name, $DomainName, $LinkedGPOs.Count )
-
-        } else {
-
-            Write-Error ( 'WMI filter with GUID ''{0}'' in domain {1} could not be removed! It is linked to {2} Group Policies.' -f $GUID.ToString('B'), $DomainName, $LinkedGPOs.Count )
-        
         }
 
+        Write-Error ( 'WMI filter with {0} ''{1}'' in domain {2} could not be removed! It is linked to {3} Group Policies.' -f $LookupBy, $LookupValue, $Domain, $LinkedGPOs.Count )
         return
 
     }
 
-    if ( $PSCmdlet.ShouldProcess( $WmiFilterObject.Name, 'remove' ) ) {
+    if ( $PSCmdlet.ShouldProcess( $ExistingFilter.DisplayName, 'remove' ) ) {
 
-        $SOMContainer = [adsi]"LDAP://CN=SOM,CN=WMIPolicy,CN=System,$NamingContext"
+        try {
 
-        if ( $Credential ) {
+            $NamingContext = ([adsi]"LDAP://$Domain/RootDSE").defaultNamingContext
+            $SOMContainer = [adsi]"LDAP://$Server/CN=SOM,CN=WMIPolicy,CN=System,$NamingContext"
+        
+            $WmiFilterObject = $SOMContainer.Children.Find( "CN=$($ExistingFilter.Id.ToString('B'))" )
 
-            $SOMContainer.PSBase.Username = $Credential.UserName
-            $SOMContainer.PSBase.Password = $Credential.GetNetworkCredential().Password
+            $SOMContainer.Children.Remove( $WmiFilterObject )
+
+        } catch {
+
+            Write-Error ( 'Failed to remove WMI filter ''{0}'' in domain {1}. Please verify that you have rights to remove WMI filters. You may also need to first enable ''Allow System Only Change'' for the domain. You can use the Set-ADSystemOnlyChange cmdlet to make this change.' -f $ExistingFilter.DisplayName, $Domain )
 
         }
-
-        $WmiObject = $SOMContainer.Children.Find( "CN=$($WmiFilterObject.GUID.ToString('B'))" )
-
-        $SOMContainer.Children.Remove( $WmiObject )
 
         $SOMContainer.Dispose()
 
     }
+
+}
+
+
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
+function Get-GPWmiFilterLinkedGPO {
+
+    [CmdletBinding(
+        DefaultParameterSetName = 'ByName'
+    )]
+    param(
+
+        [Parameter(
+            ParameterSetName = 'ByName',
+            Mandatory,
+            Position = 0,
+            ValueFromPipeline
+        )]
+        [Alias( 'DisplayName' )]
+        [string]
+        $Name,
+
+        [Parameter(
+            ParameterSetName = 'ByGUID',    
+            Mandatory,
+            Position = 0,
+            ValueFromPipelineByPropertyName
+        )]
+        [Alias( 'Id' )]
+        [guid]
+        $Guid,
+
+        [Alias( 'DomainName' )]
+        [string]
+        $Domain = $env:USERDNSDOMAIN,
+
+        [Alias( 'DC' )]
+        [string]
+        $Server
+        
+    )
+
+    $DirectoryContext = [DirectoryContext]::new( 'Domain', $Domain )
+    $DomainObject = [Domain]::GetDomain( $DirectoryContext )
+    $Forest = $DomainObject.Forest.Name
+        
+    if ( $Server -and -not $DomainObject.FindAllDomainControllers().Where({ $_.Name -like "$Server*" }).IsGlobalCatalog() ) {
+    
+        Write-Error "The supplied server is not a Global Catalog"
+        return
+    
+    } else {
+
+        $Server = $DomainObject.Forest.FindGlobalCatalog().Name
+
+    }
+
+    $GetParams = @{
+        Domain = $Domain
+        Server = $Server
+    }
+    if ( $Name ) { $GetParams.Name = $Name }
+    if ( $Guid ) { $GetParams.Guid = $Guid }
+
+    # verify that the WMI filter exists
+    $ExistingFilter = Get-GPWmiFilter @GetParams
+
+    if ( -not $ExistingFilter ) {
+
+        $LookupBy = ( 'Name', 'GUID' )[ $PSBoundParameters.ContainsKey( 'Guid' ) ]
+        $LookupValue = ( $Name, $Guid.ToString('B') )[ $PSBoundParameters.ContainsKey( 'Guid' ) ]
+        
+        Write-Error ( 'WMI filter with {0} ''{1}'' could not be found in domain {2}!' -f $LookupBy, $LookupValue, $Domain )
+        return
+
+    }
+
+    # get all linked GPOs
+    $NamingContext = ([adsi]"LDAP://$Forest/RootDSE").defaultNamingContext
+
+    $SearchFilter = "(&(objectclass=groupPolicyContainer)(gPCWQLFilter=*$($ExistingFilter.Id.ToString('B'))*))"
+    $SearchRoot = [adsi]"LDAP://$Server/$NamingContext"
+    
+    $Searcher = [adsisearcher]::new( $SearchRoot, $SearchFilter )
+    $Searcher.PropertiesToLoad.Add( 'name' ) > $null
+    
+    $Searcher.FindAll().ForEach({ $_.Properties.name }).ForEach({ Get-GPO -Guid $_ })
+
+    $Searcher.Dispose()
+    $SearchRoot.Dispose()
+
+}
+
+
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
+function Set-GPOWmiFilterLink {
+
+    [CmdletBinding(
+        DefaultParameterSetName = 'ByName',
+        SupportsShouldProcess,
+        ConfirmImpact = 'High'
+    )]
+    param(
+
+        [Parameter(
+            Mandatory,
+            Position = 0,
+            ValueFromPipeline
+        )]
+        [Microsoft.GroupPolicy.Gpo]
+        $GPO,
+
+        [Parameter(
+            ParameterSetName = 'ByName',
+            Mandatory,
+            Position = 1
+        )]
+        [Alias( 'DisplayName' )]
+        [string]
+        $Name,
+
+        [Parameter(
+            ParameterSetName = 'ByGUID',
+            Mandatory,
+            Position = 1
+        )]
+        [guid]
+        $Guid,
+
+        [Parameter(
+            ParameterSetName = 'Clear',
+            Mandatory,
+            Position = 1
+        )]
+        [switch]
+        $Clear,
+
+        [Alias( 'DC' )]
+        [string]
+        $Server,
+
+        [switch]
+        $PassThru
+        
+    )
+
+    # domain must be the same as the GPO
+    $Domain = $GPO.DomainName
+
+    if ( -not $Server ) {
+    
+        $DirectoryContext = [DirectoryContext]::new( 'Domain', $Domain )
+        $Server = [Domain]::GetDomain( $DirectoryContext ).FindDomainController().Name
+    
+    }
+
+    # get the GPO as a directory entry
+    $GPODirectoryEntry = Get-GPODirectoryEntry $GPO
+
+    if ( $Clear ) {
+
+        $GPODirectoryEntry.PutEx( 1, 'gPCWQLFilter', 0 )
+
+    } else {
+
+        # get the GPWmiFilter object
+        $GetParam = @{}
+        if ( $Name ) { $GetParam.Name = $Name }
+        if ( $Guid ) { $GetParam.Guid = $Guid }
+        $WmiFilterObject = Get-GPWmiFilter @GetParam -Domain $Domain -Server $Server -ErrorAction Stop
+
+        # assign the value
+        $GPODirectoryEntry.gPCWQLFilter = "[$Domain;$($WmiFilterObject.Id.ToString('B'));0]"
+
+    }
+
+    if ( $PSCmdlet.ShouldProcess( $GPO.DisplayName, 'set WMI filter' ) ) {
+
+        try {
+
+            $GPODirectoryEntry.CommitChanges()
+
+        } catch {
+
+            Write-Error ( 'Failed to update GPO ''{0}'' in domain {1}. Please verify that you have rights to edit this GPO.' -f $GPO.DisplayName, $GPO.DomainName )
+            return
+
+        }
+
+    }
+
+    if ( $PassThru ) {
+
+        $GPO | Get-GPO
+
+    }
+
+}
+
+
+# .ExternalHelp BW.Utils.GroupPolicy.WMIFilter-help.xml
+function Get-GPODirectoryEntry {
+
+    param(
+
+        [Parameter(
+            Mandatory,
+            Position = 0,
+            ValueFromPipeline
+        )]
+        [Microsoft.GroupPolicy.Gpo]
+        $GPO
+    )
+
+    $Domain = $GPO.DomainName
+    $DirectoryContext = [DirectoryContext]::new( 'Domain', $Domain )
+    $Server = [Domain]::GetDomain( $DirectoryContext ).FindDomainController().Name
+    
+    $NamingContext = ([adsi]"LDAP://$Domain/RootDSE").defaultNamingContext
+    [adsi]"LDAP://$Server/CN=$($GPO.Id.ToString('B')),CN=Policies,CN=System,$NamingContext"
 
 }
 
@@ -633,131 +982,3 @@ function Test-ADSystemOnlyChangeEnabled {
     }
 
 }
-
-
-<#
-.SYNOPSIS
- Utility function to return the selected Naming Context.
-#>
-function _GetNamingContext {
-
-    [CmdletBinding()]
-    param (
-
-        [ValidateSet( 'Default', 'Configuration', 'Schema' )]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $NamingContext = 'Default',
-
-        [ValidateNotNullOrEmpty()]
-        [Alias('DnsDomain')]
-        [string]
-        $DomainName = $env:USERDNSDOMAIN,
-
-        [pscredential]
-        $Credential,
-
-        [Parameter(ValueFromRemainingArguments, DontShow)]
-        $UnboundArguments
-
-    )
-
-    $PSBoundParameters.Remove( 'UnboundArguments' ) > $null
-
-    $RootDSE = [ADSI]"LDAP://$DomainName/RootDSE"
-
-    if ( $Credential ) {
-
-        $RootDSE.PSBase.Username = $Credential.UserName
-        $RootDSE.PSBase.Password = $Credential.GetNetworkCredential().Password
-
-    }
-
-    try {
-
-        return $RootDSE.Get( $NamingContext + 'NamingContext' )
-
-    } catch {
-
-        Write-Error ( 'Could not retrieve {0} for domain ''{1}'', user may not have rights to query the domain.' -f ( $NamingContext + 'NamingContext' ), $DomainName )
-        return
-
-    }
-
-}
-
-
-<#
-.SYNOPSIS
- Utility function to return a Directory Searcher object.
-#>
-function _GetSearcher {
-
-    [CmdletBinding()]
-    [OutputType([System.DirectoryServices.DirectorySearcher])]
-    param (
-
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $SearchBase,
-
-        [ValidateNotNullOrEmpty()]
-        [string]
-        $SearchFilter = '(objectClass=*)',
-
-        [Parameter()]
-        [ValidateNotNullOrEmpty()]
-        [Alias('DnsDomain')]
-        [string]
-        $DomainName = $env:USERDNSDOMAIN,
-
-        [pscredential]
-        $Credential,
-
-        [Parameter(ValueFromRemainingArguments, DontShow)]
-        $UnboundArguments
-
-    )
-
-    $PSBoundParameters.Remove( 'UnboundArguments' ) > $null
-
-    if ( $Credential ) {
-
-        $ADSearchRoot = [DirectoryEntry]::new( "LDAP://$DomainName/$SearchBase", $Credential.UserName, $Credential.GetNetworkCredential().Password )
-
-    } else {
-
-        $ADSearchRoot = [DirectoryEntry]::new( "LDAP://$DomainName/$SearchBase" )
-
-    }
-
-    [DirectorySearcher]::new( $ADSearchRoot, $SearchFilter )
-    
-}
-
-
-<#
-.SYNOPSIS
- Utility function to generate DomainParams.
-#>
-function _GetDomainParams {
-
-    param(
-
-        [string]
-        $DomainName,
-
-        [pscredential]
-        $Credential,
-
-        [Parameter(ValueFromRemainingArguments, DontShow)]
-        $UnboundArguments
-        
-    )
-
-    $PSBoundParameters.Remove( 'UnboundArguments' ) > $null
-    return $PSBoundParameters
-
-}
-

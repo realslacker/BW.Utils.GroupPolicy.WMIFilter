@@ -27,9 +27,8 @@ Create a new WmiFilterList for use in WMI filters.
 New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 2 OR ProductType = 3'
 ```
 
-This example would create a filter that selects computers where the product
-type is Domain Controller (2) or Server (3). This object would have to be
-added to a WmiFilterList before use.
+This example would create a filter that selects computers where the product type is Domain Controller (2) or Server (3).
+This object would have to be added to a WmiFilterList before use.
 
 ### EXAMPLE 2
 ```
@@ -38,9 +37,8 @@ New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 3' 
 New-WmiFilterObject 'SELECT * FROM Win32_TerminalServiceSetting WHERE TerminalServerMode = 1' -NameSpace 'root\CIMv2\TerminalServices' -WmiFilterList $WmiFilterList
 ```
 
-This example would create a filter list that selects member servers which have
-terminal server enabled. Note we are not using the default namespace for one
-of the filters.
+This example would create a filter list that selects member servers which have terminal server enabled.
+Note we are not using the default namespace for one of the filters.
 
 ## PARAMETERS
 
@@ -115,7 +113,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ### WmiFilterList
-
 ## NOTES
 
 ## RELATED LINKS

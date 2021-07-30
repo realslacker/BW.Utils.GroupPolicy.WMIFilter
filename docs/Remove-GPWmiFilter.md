@@ -8,95 +8,47 @@ schema: 2.0.0
 # Remove-GPWmiFilter
 
 ## SYNOPSIS
-Remove WMI filters from Active Directory.
+Remove WMI filter from Active Directory
 
 ## SYNTAX
 
-### Name (Default)
+### ByName (Default)
 ```
-Remove-GPWmiFilter [-Name] <String> [-DomainName <String>] [-Credential <PSCredential>] [-WhatIf] [-Confirm]
+Remove-GPWmiFilter [-Name] <String> [-Domain <String>] [-Server <String>] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
-### GUID
+### ByGUID
 ```
-Remove-GPWmiFilter [-GUID] <Guid> [-DomainName <String>] [-Credential <PSCredential>] [-WhatIf] [-Confirm]
+Remove-GPWmiFilter [-Guid] <Guid> [-Domain <String>] [-Server <String>] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Remove WMI filters from Active Directory after validating that they are not in
-use by any Group Policy objects.
+Remove WMI filter from Active Directory after validating that they are not in use by any Group Policy objects.
 
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Remove-GPWmiFilter -GUID '6a3a8a8d-2072-4596-8b5b-b24bcf0486ce'
 ```
 
-Will remove the WMI filter with the GUID '6a3a8a8d-2072-4596-8b5b-b24bcf0486ce'
-from the current user's domain.
+Will remove the WMI filter with the GUID '6a3a8a8d-2072-4596-8b5b-b24bcf0486ce' from the current user's domain.
 
 ## PARAMETERS
 
 ### -Name
-The Name of the WMI filter.
 
 ```yaml
 Type: String
-Parameter Sets: Name
-Aliases:
+Parameter Sets: ByName
+Aliases: DisplayName
 
 Required: True
 Position: 1
 Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -GUID
-The GUID of the WMI filter.
-
-```yaml
-Type: Guid
-Parameter Sets: GUID
-Aliases:
-
-Required: True
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -DomainName
-The domain to search for WMI filters.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: DnsDomain
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Credential
-Credential for binding to the domain.
-
-```yaml
-Type: PSCredential
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByValue)
 Accept wildcard characters: False
 ```
 
@@ -110,7 +62,7 @@ Aliases: cf
 
 Required: False
 Position: Named
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -126,6 +78,48 @@ Aliases: wi
 
 Required: False
 Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Domain
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: DomainName
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Guid
+
+```yaml
+Type: Guid
+Parameter Sets: ByGUID
+Aliases: Id
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Server
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: DC
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -137,7 +131,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### None
-
 ## OUTPUTS
 
 ## NOTES

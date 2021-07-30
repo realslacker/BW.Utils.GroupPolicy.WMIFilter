@@ -8,8 +8,7 @@ schema: 2.0.0
 # Set-ADSystemOnlyChange
 
 ## SYNOPSIS
-Set registry values on domain controller to allow writing to system only
-attributes.
+Set registry values on domain controller to allow writing to system only attributes.
 
 ## SYNTAX
 
@@ -34,13 +33,12 @@ Set-ADSystemOnlyChange [-Disable] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Set registry values on domain controller to allow writing to system only
-attributes.
+Set registry values on domain controller to allow writing to system only attributes.
 
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Set-ADSystemOnlyChange -Enable -ComputerName dc.contoso.com -Credential (Get-Credential)
 ```
 
@@ -116,7 +114,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ## NOTES
-This function has been taken from the GPWmiFilter.psm1 module written by Bin
-Yi from Microsoft with minimal changes.
+This function has been taken from the GPWmiFilter.psm1 module written by Bin Yi from Microsoft with minimal changes.
 
 ## RELATED LINKS

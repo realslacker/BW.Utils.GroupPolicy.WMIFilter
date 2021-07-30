@@ -12,14 +12,24 @@ Get WMI filters from Active Directory.
 
 ## SYNTAX
 
-### Name (Default)
+### GetAll
 ```
-Get-GPWmiFilter [[-Name] <String>] [-DomainName <String>] [-Credential <PSCredential>] [<CommonParameters>]
+Get-GPWmiFilter [-All] [-Domain <String>] [-Server <String>] [-AsDirectoryEntry] [<CommonParameters>]
 ```
 
-### GUID
+### ByName
 ```
-Get-GPWmiFilter [[-GUID] <Guid>] [-DomainName <String>] [-Credential <PSCredential>] [<CommonParameters>]
+Get-GPWmiFilter [-Name] <String> [-Domain <String>] [-Server <String>] [-AsDirectoryEntry] [<CommonParameters>]
+```
+
+### ByGUID
+```
+Get-GPWmiFilter [-Guid] <Guid> [-Domain <String>] [-Server <String>] [-AsDirectoryEntry] [<CommonParameters>]
+```
+
+### ByGPO
+```
+Get-GPWmiFilter -GPO <Gpo> [-AsDirectoryEntry] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -39,71 +49,110 @@ Will return a list of all WMI filters in the current user's domain.
 Get-GPWmiFilter -Name '*Server*' -DomainName 'contoso.com' -Credential (Get-Credential CONTOSO\Administrator)
 ```
 
-Will return a list of all WMI filters with 'Server' in the name from the domain
-contoso.com using the CONTOSO Administrator account.
+Will return a list of all WMI filters with 'Server' in the name from the domain contoso.com using the CONTOSO Administrator account.
 
 ### EXAMPLE 3
 ```
 Get-GPWmiFilter -GUID '6a3a8a8d-2072-4596-8b5b-b24bcf0486ce'
 ```
 
-Will return the WMI filter with the GUID '6a3a8a8d-2072-4596-8b5b-b24bcf0486ce'
-from the current user's domain.
+Will return the WMI filter with the GUID '6a3a8a8d-2072-4596-8b5b-b24bcf0486ce' from the current user's domain.
 
 ## PARAMETERS
 
 ### -Name
-The Name of the WMI filter to return.
+WMI Filter Name
 
 ```yaml
 Type: String
-Parameter Sets: Name
-Aliases:
+Parameter Sets: ByName
+Aliases: DisplayName
 
-Required: False
+Required: True
 Position: 2
 Default value: *
-Accept pipeline input: False
-Accept wildcard characters: True
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
 ```
 
-### -GUID
-The GUID of the WMI filter to return.
+### -All
 
 ```yaml
-Type: Guid
-Parameter Sets: GUID
+Type: SwitchParameter
+Parameter Sets: GetAll
 Aliases:
 
-Required: False
-Position: 2
+Required: True
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -DomainName
-The domain to search for WMI filters.
+### -AsDirectoryEntry
+Return results as DirectoryEntry object
 
 ```yaml
-Type: String
+Type: SwitchParameter
 Parameter Sets: (All)
-Aliases: DnsDomain
+Aliases:
 
 Required: False
 Position: Named
-Default value: $env:USERDNSDOMAIN
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Credential
-Credential for binding to the domain.
+### -Domain
 
 ```yaml
-Type: PSCredential
-Parameter Sets: (All)
+Type: String
+Parameter Sets: GetAll, ByName, ByGUID
+Aliases: DomainName
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -GPO
+Microsoft.GroupPolicy.Gpo to use to select the WMI filter
+
+```yaml
+Type: Gpo
+Parameter Sets: ByGPO
 Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Guid
+
+```yaml
+Type: Guid
+Parameter Sets: ByGUID
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Server
+
+```yaml
+Type: String
+Parameter Sets: GetAll, ByName, ByGUID
+Aliases: DC
 
 Required: False
 Position: Named

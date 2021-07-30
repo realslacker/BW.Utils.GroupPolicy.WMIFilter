@@ -30,7 +30,7 @@ attributes.
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Test-ADSystemOnlyChange -ComputerName dc.contoso.com -Credential (Get-Credential)
 ```
 
@@ -76,7 +76,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ## NOTES
-This function has been taken from the GPWmiFilter.psm1 module written by Bin
-Yi from Microsoft with minimal changes.
+This function has been taken from the GPWmiFilter.psm1 module written by Bin Yi from Microsoft with minimal changes.
 
 ## RELATED LINKS

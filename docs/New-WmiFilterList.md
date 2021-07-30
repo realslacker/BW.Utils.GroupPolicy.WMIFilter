@@ -37,8 +37,7 @@ Create a new WmiFilterList for use in WMI filters.
 New-WmiFilterList 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 2 OR ProductType = 3'
 ```
 
-This example would create a filter that selects computers where the product
-type is Domain Controller (2) or Server (3).
+This example would create a filter that selects computers where the product type is Domain Controller (2) or Server (3).
 
 ### EXAMPLE 2
 ```
@@ -47,9 +46,8 @@ $WmiFilter2 = New-WmiFilterObject 'SELECT * FROM Win32_TerminalServiceSetting WH
 New-WmiFilterList $WmiFilter1, $WmiFilter2
 ```
 
-This example would create a filter list that selects member servers which have
-terminal server enabled. Note we are not using the default namespace for one
-of the filters.
+This example would create a filter list that selects member servers which have terminal server enabled.
+Note we are not using the default namespace for one of the filters.
 
 ### EXAMPLE 3
 ```
@@ -58,13 +56,12 @@ New-WmiFilterObject 'SELECT * FROM Win32_OperatingSystem WHERE ProductType = 3' 
 New-WmiFilterObject 'SELECT * FROM Win32_TerminalServiceSetting WHERE TerminalServerMode = 1' -NameSpace 'root\CIMv2\TerminalServices' -WmiFilterList $WmiFilterList
 ```
 
-This is the same result as Example 2, however this time we are appending
-filters to a WmiFilterList object instead.
+This is the same result as Example 2, however this time we are appending filters to a WmiFilterList object instead.
 
 ## PARAMETERS
 
 ### -WmiFilterObject
-WMI filter objects from New-WmiFilterObject.
+WMI filter objects from New-WmiFilterObject
 
 ```yaml
 Type: WmiFilterObject[]
@@ -134,7 +131,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ### WmiFilterList
-
 ## NOTES
 
 ## RELATED LINKS

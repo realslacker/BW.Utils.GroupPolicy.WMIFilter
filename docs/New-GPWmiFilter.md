@@ -8,17 +8,17 @@ schema: 2.0.0
 # New-GPWmiFilter
 
 ## SYNOPSIS
-Create a new WMI filter in Active Directory.
+Create a new WMI filter in Active Directory
 
 ## SYNTAX
 
 ```
-New-GPWmiFilter [-Name] <String> [-Description <String>] [-GUID <Guid>] -Filter <WmiFilterObject[]>
- [-DomainName <String>] [-Credential <PSCredential>] [<CommonParameters>]
+New-GPWmiFilter [-Name] <String> [-Guid <Guid>] [-Description <String>] [-Author <String>]
+ -Filters <WmiFilterObject[]> [-Domain <String>] [-Server <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Create a new WMI filter object in Active Directory.
+Create a new WMI filter object in Active Directory by directly creating the object in AD.
 
 ## EXAMPLES
 
@@ -32,23 +32,20 @@ This example would create a filter that selects computers where the product type
 ## PARAMETERS
 
 ### -Name
-The Name of the WMI filter to create.
-Must be unique.
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: DisplayName
 
 Required: True
 Position: 2
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
 ### -Description
-An optional description of what the WMI filter does.
 
 ```yaml
 Type: String
@@ -58,30 +55,55 @@ Aliases:
 Required: False
 Position: Named
 Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
-### -GUID
-Allows you to optionally specify the GUID of the WMI filter.
-This is useful
-for restoring WMI filters from backup.
-Defaults to a random GUID.
+### -Author
 
 ```yaml
-Type: Guid
+Type: String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: Named
-Default value: ( [guid]::NewGuid() )
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: cf
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Filter
-Either string filter(s) or WMI filter object(s) returned by New-WmiFilterObject.
+### -Domain
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: DomainName
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Filters
+List of WmiFilterObjects, use New-WmiFilterObject to create
 
 ```yaml
 Type: WmiFilterObject[]
@@ -91,32 +113,46 @@ Aliases:
 Required: True
 Position: Named
 Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Guid
+
+```yaml
+Type: Guid
+Parameter Sets: (All)
+Aliases: Id
+
+Required: False
+Position: Named
+Default value: ( [guid]::NewGuid() )
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -DomainName
-The destination domain.
+### -Server
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: DnsDomain
+Aliases: DC
 
 Required: False
 Position: Named
-Default value: $env:USERDNSDOMAIN
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Credential
-Credential for binding to the domain.
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
 
 ```yaml
-Type: PSCredential
+Type: SwitchParameter
 Parameter Sets: (All)
-Aliases:
+Aliases: wi
 
 Required: False
 Position: Named

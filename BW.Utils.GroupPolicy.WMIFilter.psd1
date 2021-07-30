@@ -51,7 +51,7 @@ PowerShellVersion = '5.1'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = ''
+RequiredModules = 'GroupPolicy'
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -70,7 +70,7 @@ ScriptsToProcess = 'classes\WmiFilterObject.ps1', 'classes\WmiFilterList.ps1'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = '*-*'
+FunctionsToExport = 'Get-GPWmiFilter', 'Get-GPWmiFilterLinkedGPO', 'New-GPWmiFilter', 'New-WmiFilterList', 'New-WmiFilterObject', 'Remove-GPWmiFilter', 'Set-ADSystemOnlyChange', 'Set-GPWmiFilter', 'Set-GPWmiFilterLink', 'Test-ADSystemOnlyChangeEnabled'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
@@ -111,7 +111,7 @@ PrivateData = @{
         # ReleaseNotes = ''
         
         # External dependent modules of this module
-        # ExternalModuleDependencies = ''
+        ExternalModuleDependencies = 'GroupPolicy'
 
     } # End of PSData hashtable
 

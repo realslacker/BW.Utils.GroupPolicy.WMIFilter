@@ -5,38 +5,58 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-GPWmiFilter
+# Set-GPOWmiFilterLink
 
 ## SYNOPSIS
-Updates an exising WMI filter in Active Directory
+Set the WMI filter for a supplied GPO
 
 ## SYNTAX
 
 ### ByName (Default)
 ```
-Set-GPWmiFilter [-Name] <String> [-NewName <String>] [-Description <String>] [-Filters <WmiFilterObject[]>]
- [-Domain <String>] [-Server <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Set-GPOWmiFilterLink [-GPO] <Gpo> [-Name] <String> [-Server <String>] [-PassThru] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ### ByGUID
 ```
-Set-GPWmiFilter [-Guid] <Guid> [-NewName <String>] [-Description <String>] [-Filters <WmiFilterObject[]>]
- [-Domain <String>] [-Server <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
+Set-GPOWmiFilterLink [-GPO] <Gpo> [-Guid] <Guid> [-Server <String>] [-PassThru] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
+```
+
+### Clear
+```
+Set-GPOWmiFilterLink [-GPO] <Gpo> [-Clear] [-Server <String>] [-PassThru] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Updates an exising WMI filter in Active Directory.
+Set the WMI filter for a supplied GPO by modifying AD directly.
 
 ## EXAMPLES
 
-### EXAMPLE 1
-```
-Set-GPWmiFilter -Name 'Servers Only' -Description 'Selects computers where the product type is Domain Controller (2) or Server (3)'
+### Example 1
+```powershell
+PS C:\> Get-GPO -Name 'Default Domain Controllers Policy' | Set-GPOWmiFilterLink -Name 'Domain Controllers'
 ```
 
-This example would update the description of the WMI filter with the name 'Servers Only'.
+Will set the GPO 'Default Domain Controllers Policy' to use the 'Domain Controllers' WMI filter.
 
 ## PARAMETERS
+
+### -GPO
+
+```yaml
+Type: Gpo
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
 
 ### -Name
 
@@ -48,16 +68,45 @@ Aliases: DisplayName
 Required: True
 Position: 2
 Default value: None
-Accept pipeline input: True (ByValue)
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -NewName
+### -Guid
+
+```yaml
+Type: Guid
+Parameter Sets: ByGUID
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Clear
+Clear existing WMI filter
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: Clear
+Aliases:
+
+Required: True
+Position: 2
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Server
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: DC
 
 Required: False
 Position: Named
@@ -66,16 +115,16 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Description
+### -PassThru
 
 ```yaml
-Type: String
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: Named
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -91,7 +140,7 @@ Aliases: wi
 
 Required: False
 Position: Named
-Default value: False
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -103,62 +152,6 @@ Prompts you for confirmation before running the cmdlet.
 Type: SwitchParameter
 Parameter Sets: (All)
 Aliases: cf
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Domain
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: DomainName
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Filters
-
-```yaml
-Type: WmiFilterObject[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Guid
-
-```yaml
-Type: Guid
-Parameter Sets: ByGUID
-Aliases: Id
-
-Required: True
-Position: 2
-Default value: None
-Accept pipeline input: True (ByPropertyName)
-Accept wildcard characters: False
-```
-
-### -Server
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: DC
 
 Required: False
 Position: Named
