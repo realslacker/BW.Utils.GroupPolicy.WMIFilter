@@ -55,7 +55,7 @@ Update-ModuleManifest @ModuleManifestSplat
 # check for a signing cert
 $CodeSigningCert = Get-ChildItem -Path Cert:\CurrentUser\My -CodeSigningCert -ErrorAction SilentlyContinue
 
-# sign the build
+<# sign the build
 if ( $CodeSigningCert ) {
 
     if ( $CodeSigningCert.Count -gt 1 ) {
@@ -72,7 +72,7 @@ if ( $CodeSigningCert ) {
         
         }
 
-}
+}#>
 
 switch ( $PSCmdlet.ParameterSetName ) {
 

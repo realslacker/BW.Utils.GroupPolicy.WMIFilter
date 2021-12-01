@@ -58,7 +58,7 @@ RequiredModules = 'GroupPolicy'
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # NOTE: WmiFilterObject.ps1 needs to load before WmiFilterList.ps1 as the object class needs to already be defined when the list class is loaded.
-ScriptsToProcess = 'classes\WmiFilterObject.ps1', 'classes\WmiFilterList.ps1'
+# ScriptsToProcess = 'classes\WmiFilterObject.ps1', 'classes\WmiFilterList.ps1'
 
 # Type files (.ps1xml) to be loaded when importing this module
 # TypesToProcess = @()
@@ -70,7 +70,7 @@ ScriptsToProcess = 'classes\WmiFilterObject.ps1', 'classes\WmiFilterList.ps1'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Get-GPWmiFilter', 'Get-GPWmiFilterLinkedGPO', 'New-GPWmiFilter', 'New-WmiFilterList', 'New-WmiFilterObject', 'Remove-GPWmiFilter', 'Set-ADSystemOnlyChange', 'Set-GPWmiFilter', 'Set-GPWmiFilterLink', 'Test-ADSystemOnlyChangeEnabled'
+FunctionsToExport = 'Test-GPWmiFilterParameterBinding', 'ConvertFrom-WmiFilterString', 'ConvertTo-WmiFilterString', 'Get-GPWmiFilter', 'Get-GPWmiFilterLinkedGPO', 'New-GPWmiFilter', 'New-WmiFilterList', 'New-WmiFilterObject', 'Remove-GPWmiFilter', 'Set-ADSystemOnlyChange', 'Set-GPWmiFilter', 'Set-GPWmiFilterLink', 'Test-ADSystemOnlyChangeEnabled'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
